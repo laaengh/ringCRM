@@ -23,23 +23,6 @@ export const getCurrentUser = () => {
   })
 }
 
-export const isAdmin = async (
-  to,
-  from,
-  next
-) => {
-  const currentUser = await getCurrentUser();
-  const idTokenResult = await (currentUser).getIdTokenResult();
-
-  if (idTokenResult.claims.verketMossUserRole === "admin") {
-    // User is an admin, allow access
-    next();
-  } else {
-    // User is not an admin, redirect to home
-    next({ name: 'HomePage' });
-  }
-};
-
 export const requireAuth = async () => {
   const user = await getCurrentUser()
   return !!user
@@ -54,5 +37,4 @@ export default {
   getCurrentUser,
   requireAuth,
   requireNoAuth,
-  isAdmin,
 }

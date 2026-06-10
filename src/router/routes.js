@@ -4,15 +4,9 @@ const routes = [
   {
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
-    children: [
-      { path: '', component: () => import('pages/IndexPage.vue') },
-      { path: 'brreg-search', component: () => import('pages/BrregSearch.vue') },
-      { path: 'potential-customers', component: () => import('pages/PotentialCustomers.vue') },
-      { path: 'customer-list', component: () => import('pages/CustomerList.vue') },
-      { beforeEnter: requireAuth },
-    ]
+    children: [{ path: '', component: () => import('pages/IndexPage.vue'), name: 'HomePage' }],
+    beforeEnter: requireAuth,
   },
-
 
   // Auth routes (register / login / logout)
   {
