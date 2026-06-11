@@ -4,7 +4,20 @@ const routes = [
   {
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
-    children: [{ path: '', component: () => import('pages/IndexPage.vue'), name: 'HomePage' }],
+    children: [
+    { 
+      path: '', component: () => import('pages/IndexPage.vue'), name: 'HomePage',
+    },
+    { 
+      path: 'brreg-search', component: () => import('pages/BrregSearch.vue'), name: 'BrregSearchPage',
+    },
+    { 
+      path: 'customer-list', component: () => import('pages/CustomerList.vue'), name: 'CustomerListPage',
+    },
+     { 
+      path: 'potential-customers', component: () => import('pages/PotentialCustomers.vue'), name: 'PotentialCustomersPage',
+    }
+  ],
     beforeEnter: requireAuth,
   },
 

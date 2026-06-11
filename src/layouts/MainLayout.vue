@@ -46,8 +46,32 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref, onBeforeUnmount } from 'vue'
+import { onAuthStateChanged } from 'firebase/auth'
+import { auth } from 'boot/firebase'
 import EssentialLink from 'components/EssentialLink.vue'
+
+
+// CHECK FOR AUTH CHANGES AND LOG THEM
+let unsubscribeAuth = null
+
+onMounted(() => {
+  unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+    if (user) {
+      console.log('[AUTH] Logged in user:', {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName
+      })
+    } else {
+      console.log('[AUTH] No user logged in')
+    }
+  })
+})
+
+onBeforeUnmount(() => {
+  if (unsubscribeAuth) unsubscribeAuth()
+})
 
 const linksList = [
   {
