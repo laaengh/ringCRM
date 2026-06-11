@@ -90,6 +90,20 @@
                   <strong>Status:</strong>
                   {{ company.konkurs ? 'Konkurs' : 'Aktiv/registrert' }}
                 </div>
+                <div>
+                <q-btn
+                    color="blue"
+                    icon="phone"
+                    label="Legg til i ringeliste"
+                    :loading="addingToList[company.organisasjonsnummer]"
+                    @click="addToCallList(company)"
+                />
+                 <q-btn
+                    color="blue"
+                    icon="details"
+                    label="Detaljer"
+                />
+                </div>
               </q-card-section>
             </q-card>
           </div>
@@ -100,16 +114,91 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { useQuasar } from 'quasar'
+import { auth } from 'boot/firebase'
+import { db } from 'boot/firebase'
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { onAuthStateChanged } from 'firebase/auth'
 
+const $q = useQuasar()
 const searchQuery = ref('') 
 const loading = ref(false)
 const error = ref('')
 const hasSearched = ref(false)
 const results = ref([])
+const addingToList = ref({})
+let currentUser = null
+let unsubscribeAuth = null
+
+onMounted(() => {
+  unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+    currentUser = user
+  })
+})
+
+onBeforeUnmount(() => {
+  if (unsubscribeAuth) unsubscribeAuth()
+})
 
 function isOrgNumber(value) {
   return /^\d{9}$/.test(value.trim())
+}
+
+function formatAddress(forretningsadresse) {
+  if (!forretningsadresse) return ''
+  return [
+    ...(forretningsadresse.adresse || []),
+    forretningsadresse.postnummer,
+    forretningsadresse.poststed
+  ].filter(Boolean).join(', ')
+}
+
+async function addToCallList(company) {
+  if (!currentUser) {
+    $q.notify({
+      type: 'negative',
+      message: 'Du må være logget inn for å legge til i ringeliste.',
+      position: 'top'
+    })
+    return
+  }
+
+  addingToList.value[company.organisasjonsnummer] = true
+
+  try {
+    const callListData = {
+      firmaNavn: company.navn,
+      orgNummer: company.organisasjonsnummer,
+      firmaType: company.organisasjonsform?.beskrivelse || '',
+      firmaAdresse: formatAddress(company.forretningsadresse),
+      firmaStatus: company.konkurs ? 'Konkurs' : 'Aktiv',
+      firmaNaeringskode: company.naeringskode?.kode || '',
+      mvaRegistrert: company.mvaRegistrert || false,
+      antallAnsatte: null,
+      registreringsDato: company.registreringsdato || serverTimestamp(),
+      aktivBrreg: true,
+      fbUID: currentUser.uid,
+      legtTilDato: serverTimestamp()
+    }
+
+    await addDoc(collection(db, 'ringeListe'), callListData)
+
+    $q.notify({
+      type: 'positive',
+      message: `${company.navn} lagt til i ringeliste`,
+      position: 'top',
+      icon: 'check_circle'
+    })
+  } catch (err) {
+    $q.notify({
+      type: 'negative',
+      message: `Feil ved lagring: ${err instanceof Error ? err.message : 'Ukjent feil'}`,
+      position: 'top'
+    })
+  } finally {
+    addingToList.value[company.organisasjonsnummer] = false
+  }
 }
 
 async function searchBrreg() {
